@@ -8,4 +8,6 @@ Repeat until all assignments are completed and chapters are read:
 
 Note that the chapter on ARM assembly will be ignored. 
 
+# Assignments
+When working on assignments, I will create an ignored spec file that will hold any thoughts or notes about the assignment.
 
