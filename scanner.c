@@ -5,6 +5,7 @@
 
 typedef enum tk{
 	IDENTIFIER,
+	NUMBER,
 	NONE
 } TokenType;
 
@@ -13,6 +14,7 @@ FILE *arg_read(int, char **);
 FILE *file_write(char *);
 char *type_string(TokenType);
 int valid_identifier(char, int);
+int valid_number(char);
 
 int error_code = 0;
 
@@ -33,6 +35,12 @@ int main(int argc, char **argv){
 				fprintf(out, "%s:%c", type_string(token_type), next); // no newline; this is only part of the identifier
 				continue;
 			}
+
+			if (valid_number(next)){
+				token_type = NUMBER;
+				fprintf(out, "%s:%c", type_string(token_type), next);
+				continue;
+			}
 			// TODO: expand out all cases
 			continue;
 		}
@@ -42,17 +50,19 @@ int main(int argc, char **argv){
 				
 				if (valid_identifier(next, 0)){
 					fprintf(out, "%c", next);
-				} else {
-					token_type = NONE;
-					fprintf(out, "\n");
-					ungetc(next, file);
+					break;
 				}
-				break;
+
+			case NUMBER:
+				if (valid_number(next)){
+					fprintf(out, "%c", next);
+					break;
+				}
 			// TODO: expand out all cases
 			default:
 				token_type = NONE;
+				fprintf(out, "\n");
 				ungetc(next, file);
-				// this probably shouldn't happen once the code is fully done
 
 		}
 	}
@@ -62,15 +72,24 @@ int main(int argc, char **argv){
 }
 
 
+
+
 // turns enum into a string for easy printing... 
 // TODO: add all enums
 char *type_string(TokenType tk){
 	switch (tk){
 		case IDENTIFIER:
 			return "IDENTIFIER";
+
+		case NUMBER:
+			return "NUMBER";
 		default:
 			return ""; // again, this shouldn't really show up
 	}
+}
+
+int valid_number(char c){
+	return isdigit(c);
 }
 
 // returns true if the given character could be part of an identifier
