@@ -14,6 +14,7 @@ typedef enum tk{
 	NUMBER,
 	COMMENT,
 	STRING,
+	CHARACTER,
 	NONE
 } TokenType;
 
@@ -25,7 +26,7 @@ int valid_identifier(char, int);
 int valid_number(char);
 int valid_comment(char, int, FILE *);
 int valid_string(char, int, FILE *, FILE *);
-
+int valid_character(char, int, FILE *, FILE *);
 int error_code = 0;
 
 int main(int argc, char **argv){
@@ -74,6 +75,12 @@ int main(int argc, char **argv){
 				fprintf(out, "%s:%c", type_string(token_type), next);
 				continue;
 			}
+
+			if (valid_character(next, 1, in, out) && !last_was_escape){
+				token_type = CHARACTER;
+				fprintf(out, "%s:%c", type_string(token_type), next);
+				continue;
+			}
 			// TODO: expand out all cases
 			continue;
 		}
@@ -115,7 +122,19 @@ int main(int argc, char **argv){
 					next = fgetc(in);
 				}
 
+			case CHARACTER:
+				if (valid_character(next, 0, in, out) && token_type == CHARACTER){
+					if (next == '\\'){
+						break;
+					}
+					fprintf(out, "%c", next);
+					break;
+				}
 
+				if ((next == '\'') && token_type == CHARACTER){
+					fprintf(out, "\'");
+					next = fgetc(in);
+				}	
 			// TODO: expand out all cases
 			default:
 				token_type = NONE;
@@ -143,9 +162,31 @@ char *type_string(TokenType tk){
 			return "COMMENT";
 		case STRING:
 			return "STRING";
+		case CHARACTER:
+			return "CHARACTER";
 		default:
 			return ""; // again, this shouldn't really show up
 	}
+}
+
+// technically, if a character has more than 4 characters, it is probably an issue. I think I'll add line numbers later on so that we can return errors for compiler messages of this type
+int valid_character(char c, int first_char, FILE *in, FILE *out){
+	if (first_char){
+		return c == '\'';
+	}
+	if (c == '\\'){
+		fprintf(out, "\\");
+		char next = fgetc(in);
+		if (next == '\''){
+			fprintf(out, "\'");
+			return 1;
+		}
+		ungetc(next, in);
+		return 1;
+	}
+	
+	return (c != '\'' && c != '\n');
+
 }
 
 // doesn't do anything about errors
