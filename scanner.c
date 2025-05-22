@@ -9,12 +9,40 @@
 #include <string.h>
 #include <ctype.h>
 
+// MISSING: WHITESPACE, PUNCTUATION
 typedef enum tk{
 	IDENTIFIER,
 	NUMBER,
 	COMMENT,
 	STRING,
 	CHARACTER,
+
+	RIGHT_PAREN,
+	LEFT_PAREN,
+	COMMA,
+	SEMICOLON,
+	RIGHT_BRACKET,
+	LEFT_BRACKET,
+	RIGHT_BRACE,
+	LEFT_BRACE,
+	LOGICAL_OR,
+	LOGICAL_AND,
+	LOGICAL_NOT,
+	PLUS,
+	MINUS,
+	DIVIDE,
+	TIMES,
+	EXPONENT,
+	INCREMENT,
+	DECREMENT,
+	MODULO,
+	LESS,
+	LESS_EQUAL,
+	IS_EQUAL,
+	GREATER,
+	GREATER_EQUAL,
+	NOT_EQUAL,
+	EQUALS,
 	NONE
 } TokenType;
 
@@ -28,6 +56,7 @@ int valid_comment(char, int, FILE *);
 int valid_string(char, int, FILE *, FILE *);
 int valid_character(char, int, FILE *, FILE *);
 int error_code = 0;
+TokenType determine_punctuation(char, FILE *);
 
 int main(int argc, char **argv){
 	int comment_type = 0; // C-style comments are 2 and C++ style commnets are 1. i.e. single line // == 2 multiline /* == 1; no comment is 0
@@ -45,7 +74,7 @@ int main(int argc, char **argv){
 	int last_was_escape = 0;
 	while ((next = fgetc(in)) != EOF){
 		last_was_escape = (next == '\\') || last_was_escape;
-		
+		// TODO: LOOK AT IDENTIFIERS. THEY DO NOT SEEM TO BE WORKING		
 		if (token_type == NONE){
 			if (valid_identifier(next, 1)){
 				token_type = IDENTIFIER;
@@ -79,6 +108,12 @@ int main(int argc, char **argv){
 			if (valid_character(next, 1, in, out) && !last_was_escape){
 				token_type = CHARACTER;
 				fprintf(out, "%s:%c", type_string(token_type), next);
+				continue;
+			}
+
+			TokenType punctuation = determine_punctuation(next, in);
+			if (punctuation != NONE){
+				fprintf(out, "%s\n", type_string(punctuation));		
 				continue;
 			}
 			// TODO: expand out all cases
@@ -149,6 +184,7 @@ int main(int argc, char **argv){
 	return error_code;
 }
 
+
 // turns enum into a string for easy printing... 
 // TODO: add all enums
 char *type_string(TokenType tk){
@@ -164,9 +200,115 @@ char *type_string(TokenType tk){
 			return "STRING";
 		case CHARACTER:
 			return "CHARACTER";
+		case RIGHT_PAREN:
+			return "RIGHT_PAREN";
+		case LEFT_PAREN:
+			return "LEFT_PAREN";
+		case COMMA:
+			return "COMMA";
+		case SEMICOLON:
+			return "SEMICOLON";
+		case RIGHT_BRACKET:
+			return "RIGHT_BRACKET";
+		case LEFT_BRACKET:
+			return "LEFT_BRACKET";
+		case LEFT_BRACE:
+			return "LEFT_BRACE";
+		case RIGHT_BRACE:
+			return "LEFT_BRACE";
+		case LOGICAL_OR:
+			return "LOGICAL_OR";
+		case LOGICAL_AND:
+			return "LOGICAL_AND";
+		case LOGICAL_NOT:
+			return "LOGICAL_NOT";
+		case PLUS:
+			return "PLUS";
+		case MINUS:
+			return "MINUS";
+		case DIVIDE:
+			return "DIVIDE";
+		case TIMES:
+			return "TIMES";
+		case EXPONENT:
+			return "EXPONENT";
+		case INCREMENT:
+			return "INCREMENT";
+		case DECREMENT:
+			return "DECREMENT";
+		case MODULO:
+			return "MODULO";
+		case LESS:
+			return "LESS";
+		case LESS_EQUAL:
+			return "LESS_EQUAL";
+		case IS_EQUAL:
+			return "IS_EQUAL";
+		case GREATER:
+			return "GREATER";
+		case GREATER_EQUAL:
+			return "GREATER_EQUAL";
+		case NOT_EQUAL:
+			return "NOT_EQUAL";
+		case EQUALS:
+			return "EQUALS";
 		default:
 			return ""; // again, this shouldn't really show up
 	}
+}
+
+TokenType determine_punctuation(char c, FILE *in){
+	// if we see these, we know exactly what they are
+	if (c == ',') return COMMA;
+	if (c == ';') return SEMICOLON;
+	if (c == ')') return RIGHT_PAREN;
+	if (c == '(') return LEFT_PAREN;
+	if (c == ']') return RIGHT_BRACKET;
+	if (c == '[') return LEFT_BRACKET;
+	if (c == '}') return RIGHT_BRACE;
+	if (c == '{') return LEFT_BRACE;
+	if (c == '*') return TIMES;
+	if (c == '%') return MODULO;
+	if (c == '^') return EXPONENT;
+	if (c == '/') return DIVIDE;
+
+	// these require a bit more work
+	char next = fgetc(in);
+	if (c == '|' && next == '|') return LOGICAL_OR;
+	if (c == '!' && next != '=') return LOGICAL_NOT;
+	if (c == '!') {
+		ungetc(next, in);
+		return NOT_EQUAL;
+	}
+	if (c == '&' && next == '&') return LOGICAL_AND;
+	if (c == '+' && next == '+') return INCREMENT;
+	if (c == '+') {
+		ungetc(next, in);
+		return PLUS;
+	}
+	if (c == '-' && next == '-') return DECREMENT;
+	if (c == '-') {
+		ungetc(next, in);
+		return MINUS;
+	}
+	if (c == '>' && next == '=') return GREATER_EQUAL;
+	if (c == '>') {
+		ungetc(next, in);
+		return GREATER;
+	}
+	if (c == '<' && next == '=') return LESS_EQUAL;
+	if (c == '<') {
+		ungetc(next, in);
+		return LESS;
+	}
+	if (c == '=' && next == '=') return IS_EQUAL;
+	if (c == '=') {
+		ungetc(next, in);
+		return EQUALS;
+	}
+	// must not be punctuation
+	ungetc(next, in);
+	return NONE;
 }
 
 // technically, if a character has more than 4 characters, it is probably an issue. I think I'll add line numbers later on so that we can return errors for compiler messages of this type
