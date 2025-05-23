@@ -55,8 +55,9 @@ int valid_number(char);
 int valid_comment(char, int, FILE *);
 int valid_string(char, int, FILE *, FILE *);
 int valid_character(char, int, FILE *, FILE *);
-int error_code = 0;
 TokenType determine_punctuation(char, FILE *);
+char *check_keyword(char, FILE *);
+int error_code = 0;
 
 int main(int argc, char **argv){
 	int comment_type = 0; // C-style comments are 2 and C++ style commnets are 1. i.e. single line // == 2 multiline /* == 1; no comment is 0
@@ -74,11 +75,16 @@ int main(int argc, char **argv){
 	int last_was_escape = 0;
 	while ((next = fgetc(in)) != EOF){
 		last_was_escape = (next == '\\') || last_was_escape;
-		// TODO: LOOK AT IDENTIFIERS. THEY DO NOT SEEM TO BE WORKING		
 		if (token_type == NONE){
 			if (valid_identifier(next, 1)){
-				token_type = IDENTIFIER;
-				fprintf(out, "%s:%c", type_string(token_type), next); // no newline; this is only part of the identifier
+				char *keyword = check_keyword(next, in);
+				if (keyword == NULL){
+					token_type = IDENTIFIER;
+					fprintf(out, "%s:%c", type_string(token_type), next); // no newline; this is only part of the identifier
+				} else {
+					fprintf(out, "KEYWORD:%s\n", keyword);
+				}
+
 				continue;
 			}
 
@@ -255,6 +261,36 @@ char *type_string(TokenType tk){
 		default:
 			return ""; // again, this shouldn't really show up
 	}
+}
+
+char *check_keyword(char c, FILE *in){
+	char *buffer = malloc(10);
+	char *keywords[] = {"array", "boolean", "char", "else", "false", "for", "function", "if", "integer", "print", "return", "string", "true", "void", "while"};
+	ungetc(c, in);
+
+	int i;
+	for (i=0; i<15; i++){
+		int j;
+		for (j=0; j<strlen(keywords[i]); j++){
+			buffer[j] = fgetc(in);
+		}
+		buffer[j] = '\0';
+
+		if (strcmp(buffer, keywords[i]) == 0){
+			char next = fgetc(in);
+			ungetc(next, in);
+			if (!valid_identifier(next, 0)){
+				return buffer;
+			}
+		}
+		
+		for (j=strlen(keywords[i])-1; j>=0; j--){
+			ungetc(buffer[j], in);
+		}
+	}
+
+	fgetc(in);
+	return NULL;
 }
 
 TokenType determine_punctuation(char c, FILE *in){
