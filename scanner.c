@@ -21,6 +21,7 @@ typedef enum tk{
 	LEFT_PAREN,
 	COMMA,
 	SEMICOLON,
+	COLON,
 	RIGHT_BRACKET,
 	LEFT_BRACKET,
 	RIGHT_BRACE,
@@ -221,7 +222,7 @@ char *type_string(TokenType tk){
 		case LEFT_BRACE:
 			return "LEFT_BRACE";
 		case RIGHT_BRACE:
-			return "LEFT_BRACE";
+			return "RIGHT_BRACE";
 		case LOGICAL_OR:
 			return "LOGICAL_OR";
 		case LOGICAL_AND:
@@ -297,6 +298,7 @@ TokenType determine_punctuation(char c, FILE *in){
 	// if we see these, we know exactly what they are
 	if (c == ',') return COMMA;
 	if (c == ';') return SEMICOLON;
+	if (c == ':') return COLON;
 	if (c == ')') return RIGHT_PAREN;
 	if (c == '(') return LEFT_PAREN;
 	if (c == ']') return RIGHT_BRACKET;
