@@ -215,6 +215,8 @@ char *type_string(TokenType tk){
 			return "COMMA";
 		case SEMICOLON:
 			return "SEMICOLON";
+		case COLON:
+			return "COLON";
 		case RIGHT_BRACKET:
 			return "RIGHT_BRACKET";
 		case LEFT_BRACKET:
